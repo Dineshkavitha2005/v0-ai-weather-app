@@ -19,6 +19,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [city, setCity] = useState("London")
+  const [apiKeyMissing, setApiKeyMissing] = useState(false)
 
   const fetchWeather = async (lat: number, lon: number) => {
     setLoading(true)
@@ -28,6 +29,10 @@ export default function Home() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (errorData.error?.includes("401") || errorData.error?.includes("Invalid API key")) {
+          setApiKeyMissing(true)
+          throw new Error("Invalid OpenWeatherMap API key. Please check your OPENWEATHER_API_KEY environment variable.")
+        }
         throw new Error(errorData.error || "Failed to fetch weather data")
       }
 
@@ -37,6 +42,7 @@ export default function Home() {
         current: data.current,
         forecast: data.daily.slice(0, 7),
       })
+      setApiKeyMissing(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -50,6 +56,10 @@ export default function Home() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (errorData.error?.includes("401") || errorData.error?.includes("Invalid API key")) {
+          setApiKeyMissing(true)
+          throw new Error("Invalid OpenWeatherMap API key. Please check your OPENWEATHER_API_KEY environment variable.")
+        }
         throw new Error(errorData.error || "Failed to find city")
       }
 
@@ -98,8 +108,33 @@ export default function Home() {
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
               AI Weather Forecast
             </h1>
-            <p className="text-gray-600 text-lg">Powered by AI-driven predictions 🤖</p>
+            <p className="text-gray-600 text-lg">Powered by AI-driven predictions</p>
           </motion.div>
+
+          {apiKeyMissing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 mb-8 backdrop-blur-md"
+            >
+              <h2 className="text-lg font-semibold text-yellow-900 mb-3">API Key Setup Required</h2>
+              <p className="text-yellow-800 mb-4">
+                The current OpenWeatherMap API key is invalid. To use this app, you need to:
+              </p>
+              <ol className="text-yellow-800 list-decimal list-inside space-y-2 ml-2 mb-4">
+                <li>Visit https://openweathermap.org and create a free account</li>
+                <li>Go to your API Keys section and copy your API key</li>
+                <li>Click the "Vars" section in the sidebar</li>
+                <li>Update the OPENWEATHER_API_KEY with your new key</li>
+                <li>Wait 5-10 minutes for the key to activate</li>
+                <li>Refresh this page and try searching for a city</li>
+              </ol>
+              <p className="text-yellow-700 text-sm">
+                New API keys typically take a few minutes to activate. If the error persists, double-check that you
+                copied the entire API key correctly.
+              </p>
+            </motion.div>
+          )}
 
           {/* Search Bar */}
           <motion.div
@@ -111,7 +146,7 @@ export default function Home() {
             <SearchBar onSearch={handleSearch} />
           </motion.div>
 
-          {error && (
+          {error && !apiKeyMissing && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
