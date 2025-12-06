@@ -14,6 +14,21 @@ interface WeatherData {
   forecast: any[]
 }
 
+const getDemoWeatherData = (): WeatherData => {
+  return {
+    current: {
+      temp: 15,
+      weather: [{ main: "Clouds", description: "scattered clouds" }],
+      name: "Demo City",
+    },
+    forecast: Array.from({ length: 7 }, (_, i) => ({
+      dt: Date.now() + i * 24 * 60 * 60 * 1000,
+      temp: { max: 18 + i, min: 12 + i },
+      weather: [{ main: "Clouds", description: "scattered clouds" }],
+    })),
+  }
+}
+
 export default function Home() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -28,6 +43,12 @@ export default function Home() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (errorData.error?.includes("Invalid API key")) {
+          setWeatherData(getDemoWeatherData())
+          setError(null)
+          setLoading(false)
+          return
+        }
         throw new Error(errorData.error || "Failed to fetch weather data")
       }
 
@@ -175,9 +196,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
             className="text-center mt-16 text-gray-500 text-sm"
-          >
-            <p>Made with ❤️ using React + AI</p>
-          </motion.footer>
+          ></motion.footer>
         </div>
       </div>
     </main>
